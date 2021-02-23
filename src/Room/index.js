@@ -2,14 +2,11 @@ import { useEffect, useState } from 'react';
 import firebase from '../firebase-config';
 import { useCollectionData } from 'react-firebase-hooks/firestore';
 import { useParams } from 'react-router-dom';
-import { useCache } from 'react-use-cache';
-
 export default function Room() {
   const { room } = useParams();
   const db = firebase.firestore();
   const auth = firebase.auth();
-  const [profanitys, setProfanity] = useState([]);
-  // const [user] = useAuthState(auth);
+
   const LiveSportCollection = db
     .collection('live')
     .doc(room)
@@ -17,43 +14,49 @@ export default function Room() {
   const [chats, loading, error] = useCollectionData(
     LiveSportCollection.orderBy('createdAt', 'asc')
   );
-  const getProfanitys = () => {
-    // console.log(`${document.location.origin}/data/profanitys.json`)
-    // return fetch(`https://demo2-30fe6.web.app/data/profanitys.json`, {
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     Accept: 'application/json',
-    //   },
-    // }).then((response) => {
-    //   setProfanity(response.json());
-    // });
-  };
-  // const { isFetching, data: profanitys, updateCache } = useCache(async () => {
-  //   console.log("fetch")
-  //   const snapshot = await db.collection('profanity').get();
-  //   const profanityData = snapshot.docs.map((doc) => doc.id);
-  //   return profanityData;
-  // }, 'key-profanity');
 
-  const rewriteText = (text = '') => {
+  const getProfanitys = async () => {
+    try {
+      // const response = await fetch(
+      //   `${window.location.origin}/data/profanitys.json`,
+      //   {
+      //     headers: {
+      //       'Content-Type': 'application/json',
+      //       Accept: 'application/json',
+      //     },
+      //   }
+      // );
+      // return response.json();
+      return (await db.collection('profanity').get()).docs.map(
+        (item) => item.id
+      );
+    } catch (error) {
+      throw new Error(error);
+    }
+  };
+
+  const rewriteText = async (text = '') => {
+    const profanitys = await getProfanitys();
     const dataSet = profanitys.join('|');
     const regex = new RegExp(`${dataSet}`, 'gi');
     return text.replace(regex, '***');
   };
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    const newText = formData.get('text');
     if (auth.currentUser) {
-      LiveSportCollection.add({
+      const res = await LiveSportCollection.add({
         user: auth.currentUser.email,
-        text: rewriteText(formData.get('text')),
+        text: newText,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      })
-        .then((res) => {})
-        .catch((err) => {
-          console.log('add message error!!', err);
-        });
-      e.target.reset();
+      });
+      if (!!!res.code) {
+        e.target.reset();
+      } else {
+        console.log('add message error!!', res);
+      }
     } else {
       alert('please login!!!');
     }
@@ -94,14 +97,13 @@ export default function Room() {
     const res = await auth.signOut();
     console.log('handleLogout', res);
   };
-  useEffect(() => {
-    getProfanitys();
-    return () => {};
-  }, []);
+  // useEffect(() => {
+  //   getProfanitys();
+  //   return () => {};
+  // }, []);
 
   return (
     <div className="App">
-      <label htmlFor="">{error}</label>
       <form onSubmit={handleRegister}>
         <div>Register</div>
         <div>
