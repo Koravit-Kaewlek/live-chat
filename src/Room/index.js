@@ -8,7 +8,7 @@ export default function Room() {
   const { room } = useParams();
   const db = firebase.firestore();
   const auth = firebase.auth();
-  // const [profanity, setProfanity] = useState([]);
+  const [profanitys, setProfanity] = useState([]);
   // const [user] = useAuthState(auth);
   const LiveSportCollection = db
     .collection('live')
@@ -17,15 +17,16 @@ export default function Room() {
   const [chats, loading, error] = useCollectionData(
     LiveSportCollection.orderBy('createdAt', 'asc')
   );
-  const profanitys = () => {
-    return fetch(`${document.location.origin}/data/profanitys.json`, {
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-    }).then((response) => {
-      return response.json();
-    });
+  const getProfanitys = () => {
+    // console.log(`${document.location.origin}/data/profanitys.json`)
+    // return fetch(`https://demo2-30fe6.web.app/data/profanitys.json`, {
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //     Accept: 'application/json',
+    //   },
+    // }).then((response) => {
+    //   setProfanity(response.json());
+    // });
   };
   // const { isFetching, data: profanitys, updateCache } = useCache(async () => {
   //   console.log("fetch")
@@ -35,7 +36,7 @@ export default function Room() {
   // }, 'key-profanity');
 
   const rewriteText = (text = '') => {
-    const dataSet = profanitys().join('|');
+    const dataSet = profanitys.join('|');
     const regex = new RegExp(`${dataSet}`, 'gi');
     return text.replace(regex, '***');
   };
@@ -94,6 +95,7 @@ export default function Room() {
     console.log('handleLogout', res);
   };
   useEffect(() => {
+    getProfanitys();
     return () => {};
   }, []);
 
