@@ -18,7 +18,7 @@ export default function Room() {
     LiveSportCollection.orderBy('createdAt', 'asc')
   );
   const profanitys = () => {
-    return fetch('http://localhost:3000/data/profanitys.json', {
+    return fetch(`${document.location.origin}/data/profanitys.json`, {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
