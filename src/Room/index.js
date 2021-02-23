@@ -1,30 +1,51 @@
 import { useEffect, useState } from 'react';
 import firebase from '../firebase-config';
-import { useAuthState, AuthStateHook } from 'react-firebase-hooks/auth';
 import { useCollectionData } from 'react-firebase-hooks/firestore';
 import { useParams } from 'react-router-dom';
+import { useCache } from 'react-use-cache';
 
 export default function Room() {
   const { room } = useParams();
   const db = firebase.firestore();
   const auth = firebase.auth();
+  // const [profanity, setProfanity] = useState([]);
   // const [user] = useAuthState(auth);
   const LiveSportCollection = db
     .collection('live')
     .doc(room)
     .collection('data');
-
   const [chats, loading, error] = useCollectionData(
     LiveSportCollection.orderBy('createdAt', 'asc')
   );
+  const profanitys = () => {
+    return fetch('http://localhost:3000/data/profanitys.json', {
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+    }).then((response) => {
+      return response.json();
+    });
+  };
+  // const { isFetching, data: profanitys, updateCache } = useCache(async () => {
+  //   console.log("fetch")
+  //   const snapshot = await db.collection('profanity').get();
+  //   const profanityData = snapshot.docs.map((doc) => doc.id);
+  //   return profanityData;
+  // }, 'key-profanity');
 
+  const rewriteText = (text = '') => {
+    const dataSet = profanitys().join('|');
+    const regex = new RegExp(`${dataSet}`, 'gi');
+    return text.replace(regex, '***');
+  };
   const handleSubmit = (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     if (auth.currentUser) {
       LiveSportCollection.add({
         user: auth.currentUser.email,
-        text: formData.get('text'),
+        text: rewriteText(formData.get('text')),
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       })
         .then((res) => {})
@@ -72,6 +93,10 @@ export default function Room() {
     const res = await auth.signOut();
     console.log('handleLogout', res);
   };
+  useEffect(() => {
+    return () => {};
+  }, []);
+
   return (
     <div className="App">
       <label htmlFor="">{error}</label>
