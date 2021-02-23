@@ -58,7 +58,7 @@ export default function Room() {
         console.log('add message error!!', res);
       }
     } else {
-      alert('please login!!!');
+      alert('Please login!!!');
     }
   };
   const loginFirebase = async (email, password) => {
